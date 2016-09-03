@@ -21,7 +21,7 @@
 . /etc/sysconfig/network
 
 # Check that networking is up.
-[ ${NETWORKING} = "no" ] && exit 0
+[ "${NETWORKING}" == "no" ] && exit 0
 
 get_files() {
     FILES=`find ${CONFDIR} -maxdepth 1 -type f -name 'vip-*.conf' \
