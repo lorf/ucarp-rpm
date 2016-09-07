@@ -1,7 +1,7 @@
 Summary: Common Address Redundancy Protocol (CARP) for Unix
 Name: ucarp
 Version: 1.5.2
-Release: 15%{?dist}
+Release: 16%{?dist}
 # See the COPYING file which details everything
 License: MIT and BSD
 Group: System Environment/Daemons
@@ -102,7 +102,10 @@ fi
 %{_sbindir}/ucarp
 
 %changelog
-* Tue Nov 24 2015 James Sumners <james.sumners@gmai.com> - 1.5.2-15
+* Wed Sep 07 2016 James Sumners <james.sumners@gmail.com> - 1.5.2-16
+- Fix incorrect logic operator in init file
+
+* Tue Nov 24 2015 James Sumners <james.sumners@gmail.com> - 1.5.2-15
 - Build from forked upstream for pidfile support
 - Bump version to greater than true EPEL release version
 
