@@ -1,0 +1,6 @@
+[ol7_optional_development]
+name=Oracle Linux $releasever Optional ($basearch) - Archive
+baseurl=https://yum$ociregion.oracle.com/repo/OracleLinux/OL7/optional/developer/$basearch/
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-oracle
+gpgcheck=1
+enabled=1

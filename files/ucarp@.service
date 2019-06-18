@@ -1,0 +1,11 @@
+[Unit]
+Description=Common address redundancy protocol daemon, config: vip-%I.conf
+After=syslog.target network-online.target
+
+[Service]
+PrivateTmp=true
+Type=forking
+ExecStart=/usr/libexec/ucarp/ucarp start %i
+
+[Install]
+WantedBy=multi-user.target

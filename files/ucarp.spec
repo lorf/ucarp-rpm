@@ -1,25 +1,25 @@
+%define _hardened_build 1
 Summary: Common Address Redundancy Protocol (CARP) for Unix
 Name: ucarp
 Version: 1.5.2
-Release: 16%{?dist}
+Release: 24%{?dist}
 # See the COPYING file which details everything
 License: MIT and BSD
-Group: System Environment/Daemons
 URL: http://www.ucarp.org/
-Source0: ucarp-%{version}.tar
-Source1: ucarp.init
+Source0: http://download.pureftpd.org/pub/ucarp/ucarp-%{version}.tar.bz2
+Source1: ucarp@.service
 Source2: vip-001.conf.example
 Source3: vip-common.conf
 Source4: vip-up
 Source5: vip-down
 #Source6: vip-helper.sh
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-Requires(post): /sbin/chkconfig
-Requires(preun): /sbin/chkconfig, /sbin/service
-Requires(postun): /sbin/service
-BuildRequires: gettext
+Source7: ucarp
+Source8: vip-001.pwd.example
+#Patch0: ucarp-1.5.2-sighup.patch
+BuildRequires: gettext-devel
 BuildRequires: autoconf, automake, libtool
 BuildRequires: libpcap-devel
+BuildRequires: systemd
 
 %description
 UCARP allows a couple of hosts to share common virtual IP addresses in order
@@ -34,11 +34,12 @@ need for any dedicated extra network link between redundant hosts.
 %prep
 %setup -q
 
+#%patch0 -p0
 
 %build
 libtoolize
+mv -f po/Makevars.template po/Makevars
 gettextize -f
-cp po/Makevars.template po/Makevars
 autoreconf -i
 %configure
 %{__make} %{?_smp_mflags}
@@ -49,24 +50,21 @@ autoreconf -i
 %{__make} install DESTDIR=%{buildroot}
 %find_lang %{name}
 
-# Install the init script
+# Install the unit file
 %{__install} -D -p -m 0755 %{SOURCE1} \
-    %{buildroot}/etc/rc.d/init.d/ucarp
+    %{buildroot}%{_unitdir}/ucarp@.service
 
 %{__mkdir_p} %{buildroot}/etc/ucarp
 %{__mkdir_p} %{buildroot}%{_libexecdir}/ucarp
 
 # Install the example config files
-%{__install} -D -p -m 0600 %{SOURCE2} %{SOURCE3} \
+%{__install} -D -p -m 0600 %{SOURCE2} %{SOURCE3} %{SOURCE8} \
     %{buildroot}/etc/ucarp/
 
 # Install helper scripts
-%{__install} -D -p -m 0700 %{SOURCE4} %{SOURCE5} \
+%{__install} -D -p -m 0700 %{SOURCE4} %{SOURCE5} %{SOURCE7} \
     %{buildroot}%{_libexecdir}/ucarp/
 
-
-%clean
-%{__rm} -rf %{buildroot}
 
 
 %pre
@@ -77,37 +75,88 @@ if [ -f /etc/rc.d/init.d/carp ]; then
 fi
 
 %post
-/sbin/chkconfig --add ucarp
+%systemd_post ucarp@.service
 
 %preun
-if [ $1 -eq 0 ]; then
-    /sbin/service ucarp stop &>/dev/null || :
-    /sbin/chkconfig --del ucarp
-fi
+%systemd_preun ucarp@.service
 
 %postun
-if [ $1 -ge 1 ]; then
-    /sbin/service ucarp condrestart &>/dev/null || :
-fi
+%systemd_postun_with_restart ucarp@.service
 
 
 %files -f %{name}.lang
-%defattr(-,root,root,-)
 %doc AUTHORS COPYING ChangeLog NEWS README
-/etc/rc.d/init.d/ucarp
+%{_unitdir}/ucarp@.service
 %attr(0700,root,root) %dir /etc/ucarp/
 %config(noreplace) /etc/ucarp/vip-common.conf
 /etc/ucarp/vip-001.conf.example
+/etc/ucarp/vip-001.pwd.example
 %config(noreplace) %{_libexecdir}/ucarp/
 %{_sbindir}/ucarp
 
 %changelog
-* Wed Sep 07 2016 James Sumners <james.sumners@gmail.com> - 1.5.2-16
-- Fix incorrect logic operator in init file
+* Sun Feb 03 2019 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-24
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
-* Tue Nov 24 2015 James Sumners <james.sumners@gmail.com> - 1.5.2-15
-- Build from forked upstream for pidfile support
-- Bump version to greater than true EPEL release version
+* Sat Jul 14 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-23
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
+* Mon Feb 26 2018 Gwyn Ciesla <limburgher@gmail.com> - 1.5.2-22
+- Incorporate systemd tweaks from Hans-Werner Jouy.
+
+* Fri Feb 09 2018 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-21
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
+
+* Tue Aug 08 2017 Gwyn Ciesla <limburgher@gmail.com> - 1.5.2-20
+- Correct unit file target.
+
+* Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-19
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
+
+* Thu Jul 27 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-18
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
+
+* Tue Mar 14 2017 Jon Ciesla <limburgher@gmail.com> - 1.5.2-17
+- systemd cleanup
+
+* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-16
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Fri Feb 05 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.5.2-15
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Fri Jun 19 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-14
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Thu Aug 21 2014 Kevin Fenzi <kevin@scrye.com> - 1.5.2-13
+- Rebuild for rpm bug 1131960
+
+* Mon Aug 18 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-12
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
+* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-11
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Mon Aug 05 2013 Jon Ciesla <limburgher@gmail.com> - 1.5.2-10
+- Fix FTBFS, BZ 992829.
+
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Fri Feb 15 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-8
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
+* Thu Oct 25 2012 Jon Ciesla <limburgher@gmail.com> - 1.5.2-7
+- Patch to fix crash, BZ 693762.
+
+* Sun Jul 22 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Fri Apr 13 2012 Jon Ciesla <limburgher@gmail.com> - 1.5.2-5
+- Add hardened build.
+
+* Wed Mar 14 2012 Jon Ciesla <limburgher@gmail.com> - 1.5.2-4
+- Migrate to systemd, BZ 800498.
 
 * Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.5.2-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
