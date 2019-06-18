@@ -6,8 +6,7 @@ ARG no_proxy
 
 COPY ol7_optional_development.repo /etc/yum.repos.d/
 RUN yum install -y rpmdevtools gcc make automake yum-utils git redhat-lsb-core \
-    libpcap-devel libtool && yum clean all
-RUN yum install -y gettext-devel && yum clean all
+    libpcap-devel libtool gettext-devel && yum clean all
 
 # Set locales
 ENV LANG en_US.UTF-8
